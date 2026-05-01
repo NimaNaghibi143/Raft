@@ -5,3 +5,5 @@ Nodes in a cluster conduct elections to pick a leader. Users of the Raft cluster
 ## Components
 
 * **A distributed key-value store:** We need to create a state machine and commands that are sent to the state machine.
+
+* **HTTP API:** We need HTTP endpoints that allow the user tp operate the state mahcine through the Raft cluster.
