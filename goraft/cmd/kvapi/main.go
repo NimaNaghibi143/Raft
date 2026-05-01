@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"sync"
 )
@@ -40,4 +42,30 @@ func (s *statemachine) Apply(cmd []byte) ([]byte, error) {
 	}
 
 	return nil, nil
+}
+
+// cmds passed from the user into the state machine need to be serialized to bytes.
+
+func encodeCommand(c command) []byte {
+	msg := bytes.NewBuffer(nil)
+	err := msg.WriteByte(uint8(c.kind))
+	if err != nil {
+		panic(err)
+	}
+
+	err = binary.Write(msg, binary.LittleEndian, uint64(len(c.key)))
+	if err != nil {
+		panic(err)
+	}
+
+	msg.WriteString(c.key)
+
+	err = binary.Write(msg, binary.LittleEndian, uint64(len(c.value)))
+	if err != nil {
+		panic(err)
+	}
+
+	msg.WriteString(c.value)
+
+	return msg.Bytes()
 }
