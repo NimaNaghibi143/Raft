@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
+	"net/http"
 	"sync"
 )
 
@@ -23,6 +25,11 @@ type command struct {
 	kind  commnadKind
 	key   string
 	value string
+}
+
+type httpServer struct {
+	raft *goraft.server
+	db   *sync.Map
 }
 
 func (s *statemachine) Apply(cmd []byte) ([]byte, error) {
@@ -85,4 +92,26 @@ func decodeCommand(msg []byte) command {
 	}
 
 	return c
+}
+
+// HTTP API
+// SET Operation: grabbing the key and value the user passes in and call APPLY() on the the Raft
+// cluster.
+
+// Example:
+//
+// curl http://localhost:3000/set?key=x&value=1
+
+func (hs httpServer) setHandler(w http.ResponseWriter, r *http.Request) {
+	var c command
+	c.kind = setCommand
+	c.key = r.URL.Query().Get("key")
+	c.value = r.URL.Query().Get("value")
+
+	_, err := hs.raft.Apply([][]byte{encodeCommand(c)})
+	if err != nil {
+		log.Printf("Could not write key-value: %s", err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 }
