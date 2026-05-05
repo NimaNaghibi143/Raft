@@ -1,6 +1,7 @@
 package goraft
 
 import (
+	"fmt"
 	"net/http"
 	"net/rpc"
 	"os"
@@ -136,4 +137,43 @@ func NewServer(
 		heartBeatMs:  300,
 		mu:           sync.Mutex{},
 	}
+}
+
+func (s *Server) debugmsg(msg string) string {
+	return fmt.Sprintf("%s [Id: %d, Term: %d] %s",
+		time.Now().Format(time.RFC3339Nano), s.id, s.currentTerm, msg)
+}
+
+func (s *Server) debug(msg string) {
+	if !s.Debug {
+		return
+	}
+
+	fmt.Println(s.debugmsg(msg))
+}
+
+func (s *Server) debugf(msg string, args ...any) {
+	if s.Debug {
+		return
+	}
+
+	s.debug(fmt.Sprintf(msg, args...))
+}
+
+func (s *Server) warn(msg string) {
+	fmt.Println("[WARN] " + s.debugmsg(msg))
+}
+
+func (s *Server) warnf(msg string, args ...any) {
+	fmt.Println(fmt.Sprintf(msg, args...))
+}
+
+func Assert[T comparable](msg string, a, b T) {
+	if a != b {
+		panic(fmt.Sprintf("%s. Got a = %#v, b = %#v", msg, a, b))
+	}
+}
+
+func Server_assert[T comparable](s *Server, msg string, a, b T) {
+	Assert(s.debugmsg(msg), a, b)
 }
